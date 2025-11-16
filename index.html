@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Examen Mitosis 9no</title>
+<title>Examen Mitosis 9no – Tiempo Real</title>
 <style>
 :root{--prim:#667eea;--sec:#764ba2;--ok:#4CAF50;--bad:#f44336}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -17,6 +17,12 @@ h1{font-size:2em;color:var(--prim);margin-bottom:8px}
 .name-input-box input{padding:10px 15px;border:2px solid #ddd;border-radius:25px;font-size:1em;width:260px;max-width:80%;transition:border .3s}
 .name-input-box input:focus{outline:none;border-color:var(--prim)}
 .visitors-box{font-size:1em;color:#444}
+/* TABLÓN EN VIVO */
+.live-board{background:#e8f5e9;border:2px solid var(--ok);border-radius:10px;padding:12px;margin-bottom:15px;font-size:.95em;max-height:150px;overflow-y:auto}
+.live-board h3{margin:0 0 8px;font-size:1.1em;color:var(--ok)}
+.live-board ul{list-style:none;padding:0;margin:0}
+.live-board li{padding:3px 0;border-bottom:1px dashed #c8e6c9}
+.live-board .total{font-weight:700;margin-top:8px}
 .progress-bar{height:8px;background:#e0e0e0;border-radius:4px;margin:15px 0;overflow:hidden}
 .progress{height:100%;background:linear-gradient(90deg,var(--ok),#8BC34A);width:0;transition:width .4s}
 .question-box{margin-bottom:20px}
@@ -62,9 +68,16 @@ h1{font-size:2em;color:var(--prim);margin-bottom:8px}
 <input type="text" id="userName" placeholder="Tu nombre" maxlength="25">
 <button class="btn" onclick="startExam()">Comenzar</button>
 </div>
+
+<!-- PANEL EN VIVO -->
+<div class="live-board" id="liveBoard" style="display:none">
+<h3>🏆 Tablón en vivo</h3>
+<ul id="liveList"></ul>
+<div class="total">Total terminados: <b id="finishCount">0</b></div>
+</div>
+
 <div class="visitors-box" id="visitorsBox" style="display:none">
-👥 Personas que terminaron: <b id="finishCount">0</b> | 🌍 Tu país: <b id="userCountry">—</b><br>
-Estudiante: <strong id="studentName"></strong>
+Estudiante: <strong id="studentName"></strong> | 🌍 Tu país: <b id="userCountry">—</b>
 </div>
 <div class="progress-bar"><div class="progress" id="progressBar"></div></div>
 </header>
@@ -111,23 +124,22 @@ const e=Math.floor((Date.now()-startTime)/1000);
 return `${Math.floor(e/60)} min ${e%60} seg`;
 }
 
-/* ---------- GITHUB REPO ---------- */
-const OWNER='creacionesk593-cell'; // << cambia si cambias de usuario
+/* ---------- GITHUB ---------- */
+const OWNER='creacionesk593-cell'; // << cambia si cambias usuario
 const REPO='cuestionario_examen2';
-const TOKEN='TOKEN_GH'; // se lee desde secret en el workflow (sólo escritura)
-const FILE='globalCounters.json'; // archivo que guarda contador y países
+const FILE='globalCounters.json';
 
 /* ---------- PREGUNTAS ---------- */
 const questions=[
-{q:"¿La etapa en la que los cromosomas se alinean en el ecuador de la fibra del huso se llama?",opts:["Telofase","Metafase","Anafase","Profase"],correct:1,model:"metafase",exp:"En la metafase los cromosomas forman la placa ecuatorial."},
-{q:"¿Cuál es la mejor etapa para determinar tamaño, forma y número de cromosomas?",opts:["Telofase","Metafase","Interfase","Profase"],correct:1,model:"metafase",exp:"Metafase: cromosomas totalmente condensados y alineados."},
-{q:"¿Dónde están los anillos de Balbiani?",opts:["Heterosoma","Autosoma","Cromosoma politénico","Ninguna"],correct:2,model:"profase",exp:"Se observan en cromosomas politénicos de glándulas salivales de dípteros."},
+{q:"¿La etapa en la que los cromosomas se alinean en el ecuador de la fibra del huso se llama?",opts:["Telofase","Metafase","Anafase","Profase"],correct:1,model:"metafase",exp:"Metafase = placa ecuatorial."},
+{q:"¿Cuál es la mejor etapa para determinar tamaño, forma y número de cromosomas?",opts:["Telofase","Metafase","Interfase","Profase"],correct:1,model:"metafase",exp:"Metafase: cromosomas condensados y alineados."},
+{q:"¿Dónde están los anillos de Balbiani?",opts:["Heterosoma","Autosoma","Cromosoma politénico","Ninguna"],correct:2,model:"profase",exp:"Politénicos de glándulas salivales de dípteros."},
 {q:"¿Qué estructuras desaparecen SIEMPRE durante mitosis/meiosis?",opts:["Membrana plasmática","Plástidos","Nucléolo y membrana nuclear","Ninguno"],correct:2,model:"profase",exp:"Desaparecen nucléolo y envoltura nuclear en profase."},
-{q:"¿Cuál punto de control se considera restricción?",opts:["Punto M","G1","G2","Ninguno"],correct:1,model:"interfase",exp:"G1: decide si entra en S o reposo (G0)."},
-{q:"¿En qué etapa se separan las cromátidas hermanas?",opts:["Metafase","Telofase","Anafase","Ninguna"],correct:2,model:"anafase",exp:"Anafase: rompen cohesinas y migran a polos opuestos."},
-{q:"¿Dónde están los anillos de Balbiani? (repetido)",opts:["Heterosoma","Autosoma","Cromosoma politénico","Ninguna"],correct:2,model:"profase",exp:"Repite concepto: politénicos."},
+{q:"¿Cuál punto de control se considera restricción?",opts:["Punto M","G1","G2","Ninguno"],correct:1,model:"interfase",exp:"G1 decide si entra en S o reposo (G0)."},
+{q:"¿En qué etapa se separan las cromátidas hermanas?",opts:["Metafase","Telofase","Anafase","Ninguna"],correct:2,model:"anafase",exp:"Anafase: rompen cohesinas."},
+{q:"¿Dónde están los anillos de Balbiani? (repetido)",opts:["Heterosoma","Autosoma","Cromosoma politénico","Ninguna"],correct:2,model:"profase",exp:"Repite: politénicos."},
 {q:"Separación de cromátidas (repetido)",opts:["Metafase","Telofase","Anafase","Ninguna"],correct:2,model:"anafase",exp:"Repite: anafase."},
-{q:"¿Cuándo se hacen visibles los cromosomas al microscopio óptico?",opts:["Telofase","Anafase","Profase","Prometafase"],correct:2,model:"profase",exp:"Profase: cromatina condensada → cromosomas visibles."}
+{q:"¿Cuándo se hacen visibles los cromosomas al microscopio óptico?",opts:["Telofase","Anafase","Profase","Prometafase"],correct:2,model:"profase",exp:"Profase: cromatina condensada → visibles."}
 ];
 
 /* ---------- VARIABLES ---------- */
@@ -139,43 +151,52 @@ studentName=document.getElementById('userName').value.trim();
 if(!studentName){alert('Escribe tu nombre');return;}
 document.getElementById('studentName').textContent=studentName;
 document.getElementById('nameBox').style.display='none';
+document.getElementById('liveBoard').style.display='block';
 document.getElementById('examMain').style.display='block';
 document.getElementById('timerBox').style.display='block';
 // detectar país
 try{const r=await fetch('https://ipapi.co/json/');const d=await r.json();userCountry=d.country_name||'—';}catch{userCountry='—';}
 document.getElementById('userCountry').textContent=userCountry;
-await updateGlobalCounter(); // leer contador global
+await updateGlobalCounter(); // primera carga
 startTimer();
 renderQuestion();
 render3D(questions[0].model);
+setInterval(updateGlobalCounter,5000); // actualiza cada 5 s
 }
 
-/* ---------- CONTADOR GLOBAL ---------- */
+/* ---------- CONTADOR GLOBAL + LISTA EN VIVO ---------- */
 async function updateGlobalCounter(){
 try{
 const r=await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${FILE}`);
 if(!r.ok)throw'no file';
 const d=await r.json();
 document.getElementById('finishCount').textContent=d.totalFinished||0;
+// listado de últimos 10
+const list=document.getElementById('liveList');list.innerHTML='';
+const arr=(d.lastTen||[]).slice(-10);
+arr.reverse().forEach(item=>{
+const li=document.createElement('li');li.textContent=`${item.name} (${item.country}) – ${item.score}/9`;list.appendChild(li);
+});
 }catch{document.getElementById('finishCount').textContent=0;}
 }
+
+/* ---------- INCREMENTAR ---------- */
 async function incrementGlobalCounter(){
 try{
-// leer sha y contenido
 const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`);
-let sha='',data={totalFinished:0,countries:{}};
-if(r.ok){
-const j=await r.json();sha=j.sha;data=JSON.parse(atob(j.content));
-}
+let sha='',data={totalFinished:0,countries:{},lastTen:[]};
+if(r.ok){const j=await r.json();sha=j.sha;data=JSON.parse(atob(j.content));}
 data.totalFinished=(data.totalFinished||0)+1;
 data.countries=data.countries||{};
 data.countries[userCountry]=(data.countries[userCountry]||0)+1;
+data.lastTen=data.lastTen||[];
+data.lastTen.push({name:studentName,country:userCountry,score:score,date:new Date().toISOString()});
+if(data.lastTen.length>10)data.lastTen=data.lastTen.slice(-10);
 const content=btoa(JSON.stringify(data,null,2));
-// commit
 await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`,{
 method:'PUT',
 headers:{'Authorization':`token ${TOKEN}`,'Content-Type':'application/json'},
-body:JSON.stringify({message:`nuevo finish ${studentName}`,content,sha})
+body:JSON.stringify({message:`finish ${studentName}`,content,sha})
 });
 document.getElementById('finishCount').textContent=data.totalFinished;
 }catch(e){console.error(e)}
@@ -227,17 +248,19 @@ document.getElementById('resultMessage').textContent=msg;document.getElementById
 document.getElementById('resultBox').style.display='block';
 }
 
-/* ---------- CERTIFICADO ---------- */
+/* ---------- CERTIFICADO 2× MÁS GRANDE ---------- */
 function downloadCertificate(){
-const cert=document.createElement('div');cert.style.background='#fff';cert.style.padding='30px';cert.style.textAlign='center';cert.style.fontFamily='Segoe UI';cert.style.border='5px solid var(--prim)';cert.style.borderRadius='15px';cert.style.width='90%';cert.style.maxWidth='600px';cert.style.margin='0 auto';
-cert.innerHTML=`<h2 style="color:var(--prim)">🧬 Certificado Mitosis 9no</h2>
-<p style="font-size:1.3em;margin:10px">Se otorga a:</p>
-<h3 style="color:var(--sec)">${studentName}</h3>
-<p style="font-size:1.1em">Puntuación: <b>${score}/9 (${Math.round(score/9*100)}%)</b></p>
-<p style="font-size:1em">Tiempo: ${document.getElementById('timeUsed').textContent}</p>
-<p style="font-size:.9em;color:#777">Fecha: ${new Date().toLocaleDateString('es-ES')}</p>`;
+// canvas doble tamaño
+const cert=document.createElement('div');cert.style.background='#fff';cert.style.padding='60px';cert.style.textAlign='center';cert.style.fontFamily='Segoe UI';cert.style.border='8px solid var(--prim)';cert.style.borderRadius='25px';cert.style.width='90%';cert.style.maxWidth='1000px';cert.style.margin='0 auto';cert.style.fontSize='1.4em';
+cert.innerHTML=`<h1 style="color:var(--prim);font-size:3em;margin-bottom:20px">🧬 Certificado Mitosis 9no</h1>
+<p style="font-size:1.6em;margin:15px">Se otorga a:</p>
+<h2 style="color:var(--sec);font-size:2.5em;margin-bottom:25px">${studentName}</h2>
+<p style="font-size:1.4em">Puntuación: <b>${score}/9 (${Math.round(score/9*100)}%)</b></p>
+<p style="font-size:1.2em">Tiempo: ${document.getElementById('timeUsed').textContent}</p>
+<p style="font-size:1em;color:#777;margin-top:25px">Fecha: ${new Date().toLocaleDateString('es-ES')}</p>`;
 document.body.appendChild(cert);
-html2canvas(cert).then(canvas=>{
+// generar canvas al doble de escala
+html2canvas(cert,{scale:2}).then(canvas=>{
 const a=document.createElement('a');a.download=`Certificado_${studentName.replace(/\s+/g,'_')}.png`;a.href=canvas.toDataURL();a.click();document.body.removeChild(cert);
 });
 }
