@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examen Mitosis 9no</title>
+<style>
+:root{--prim:#667eea;--sec:#764ba2;--ok:#4CAF50;--bad:#f44336}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial;background:linear-gradient(135deg,var(--prim) 0%,var(--sec) 100%);min-height:100vh;padding:15px;color:#333}
+.container{max-width:900px;margin:0 auto;background:#fff;border-radius:18px;padding:25px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+header{text-align:center;margin-bottom:20px}
+h1{font-size:2em;color:var(--prim);margin-bottom:8px}
+.subtitle{font-size:1.05em;color:#555}
+.timer-box{background:var(--ok);color:#fff;padding:12px;border-radius:8px;text-align:center;font-size:1.2em;font-weight:700;margin-bottom:15px;letter-spacing:.5px}
+.name-input-box,.visitors-box{background:#f5f5f5;padding:15px;border-radius:10px;margin-bottom:15px;text-align:center}
+.name-input-box input{padding:10px 15px;border:2px solid #ddd;border-radius:25px;font-size:1em;width:260px;max-width:80%;transition:border .3s}
+.name-input-box input:focus{outline:none;border-color:var(--prim)}
+.visitors-box{font-size:1em;color:#444}
+.progress-bar{height:8px;background:#e0e0e0;border-radius:4px;margin:15px 0;overflow:hidden}
+.progress{height:100%;background:linear-gradient(90deg,var(--ok),#8BC34A);width:0;transition:width .4s}
+.question-box{margin-bottom:20px}
+.question-number{font-size:.95em;color:var(--sec);font-weight:700;margin-bottom:6px}
+.question-text{font-size:1.2em;margin-bottom:12px;font-weight:600}
+.options{display:flex;flex-direction:column;gap:10px}
+.option{padding:12px 16px;background:#f5f5f5;border:2px solid #ddd;border-radius:10px;cursor:pointer;transition:all .3s;font-size:1.05em}
+.option:hover{background:#e3f2fd;border-color:#2196F3;transform:translateX(3px)}
+.option.correct{background:var(--ok);color:#fff;border-color:var(--ok);animation:pop .45s}
+.option.incorrect{background:var(--bad);color:#fff;border-color:var(--bad);animation:shake .35s}
+@keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.feedback-msg{margin-top:10px;font-weight:700;font-size:1em;display:none}
+.feedback-msg.ok{color:var(--ok)}
+.feedback-msg.bad{color:var(--bad)}
+.explanation-box{background:#fff3cd;border-left:4px solid #ffc107;padding:12px;margin-top:12px;border-radius:5px;display:none;font-size:.95em}
+.controls{display:flex;justify-content:space-between;margin-top:20px}
+.btn{padding:10px 24px;background:#2196F3;color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:1em;transition:all .3s;box-shadow:0 4px 12px rgba(33,150,243,.3)}
+.btn:disabled{background:#90CAF9;cursor:not-allowed;box-shadow:none}
+.btn:not(:disabled):hover{background:#1976D2;transform:translateY(-2px)}
+.result-box{text-align:center;padding:25px}
+.score-circle{width:140px;height:140px;border-radius:50%;background:conic-gradient(var(--ok) calc(var(--p)*1%),#e0e0e0 0);display:flex;align-items:center;justify-content:center;margin:15px auto;font-size:2em;font-weight:700;color:#333}
+.download-btn{background:var(--ok);margin-top:12px;box-shadow:0 4px 12px rgba(76,175,80,.3)}
+.download-btn:hover{background:#388E3C}
+.model-3d{width:220px;height:220px;margin:15px auto;position:relative;transform-style:preserve-3d;animation:rotate3d 10s infinite linear}
+@keyframes rotate3d{0%{transform:rotateY(0deg) rotateX(10deg)}100%{transform:rotateY(360deg) rotateX(10deg)}}
+.cell{position:absolute;width:180px;height:180px;left:50%;top:50%;transform:translate(-50%,-50%);border:3px solid var(--ok);border-radius:50%;background:radial-gradient(circle,rgba(76,175,80,.3),rgba(76,175,80,.1));animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.05)}}
+.chromosome{position:absolute;width:50px;height:7px;background:#FF6B6B;border-radius:3px;box-shadow:0 0 8px rgba(255,107,107,.5)}
+.centromere{position:absolute;width:10px;height:10px;background:#FFA500;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 12px rgba(255,165,0,.7)}
+.spindle-fiber{position:absolute;width:2px;height:80px;background:linear-gradient(to bottom,transparent,#00BCD4,transparent);left:50%;transform:translateX(-50%)}
+@media (max-width:600px){h1{font-size:1.7em}.question-text{font-size:1.1em}.option{font-size:1em}.timer-box{font-size:1.1em}.model-3d{width:180px;height:180px}.cell{width:150px;height:150px}}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>🧬 Examen Mitosis 9no</h1>
+<p class="subtitle">Cuestionario interactivo con contador global</p>
+<div class="timer-box" id="timerBox" style="display:none">Tiempo: 00:00</div>
+<div class="name-input-box" id="nameBox">
+<label for="userName">Escribe tu nombre para comenzar:</label><br>
+<input type="text" id="userName" placeholder="Tu nombre" maxlength="25">
+<button class="btn" onclick="startExam()">Comenzar</button>
+</div>
+<div class="visitors-box" id="visitorsBox" style="display:none">
+👥 Personas que terminaron: <b id="finishCount">0</b> | 🌍 Tu país: <b id="userCountry">—</b><br>
+Estudiante: <strong id="studentName"></strong>
+</div>
+<div class="progress-bar"><div class="progress" id="progressBar"></div></div>
+</header>
+
+<main id="examMain" style="display:none">
+<div class="question-box" id="questionBox">
+<div class="question-number" id="questionNumber">Pregunta 1 de 9</div>
+<div class="question-text" id="questionText"></div>
+<div class="options" id="optionsContainer"></div>
+<div class="feedback-msg" id="feedbackMsg"></div>
+<div class="explanation-box" id="explanationBox"></div>
+</div>
+<div class="model-3d" id="model3d" aria-hidden="true"></div>
+<div class="controls">
+<button class="btn" id="prevBtn" onclick="previousQuestion()">⬅️ Anterior</button>
+<button class="btn" id="nextBtn" onclick="nextQuestion()" disabled>Siguiente ➡️</button>
+</div>
+</main>
+
+<div class="result-box" id="resultBox" style="display:none">
+<h2>Resultados</h2>
+<div class="score-circle" id="scoreCircle">0%</div>
+<p id="resultMessage"></p>
+<p id="timeUsed"></p>
+<button class="btn download-btn" onclick="downloadCertificate()">📥 Descargar certificado</button><br>
+<button class="btn" onclick="location.reload()">🔄 Reiniciar</button>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+/* ---------- TIMER ---------- */
+let startTime, timerInterval;
+function startTimer(){
+startTime=Date.now();
+timerInterval=setInterval(()=>{
+const e=Math.floor((Date.now()-startTime)/1000);
+document.getElementById('timerBox').textContent=`Tiempo: ${String(Math.floor(e/60)).padStart(2,'0')}:${String(e%60).padStart(2,'0')}`;
+},1000);
+}
+function stopTimer(){
+clearInterval(timerInterval);
+const e=Math.floor((Date.now()-startTime)/1000);
+return `${Math.floor(e/60)} min ${e%60} seg`;
+}
+
+/* ---------- GITHUB REPO ---------- */
+const OWNER='creacionesk593-cell'; // << cambia si cambias de usuario
+const REPO='cuestionario_examen2';
+const TOKEN='TOKEN_GH'; // se lee desde secret en el workflow (sólo escritura)
+const FILE='globalCounters.json'; // archivo que guarda contador y países
+
+/* ---------- PREGUNTAS ---------- */
+const questions=[
+{q:"¿La etapa en la que los cromosomas se alinean en el ecuador de la fibra del huso se llama?",opts:["Telofase","Metafase","Anafase","Profase"],correct:1,model:"metafase",exp:"En la metafase los cromosomas forman la placa ecuatorial."},
+{q:"¿Cuál es la mejor etapa para determinar tamaño, forma y número de cromosomas?",opts:["Telofase","Metafase","Interfase","Profase"],correct:1,model:"metafase",exp:"Metafase: cromosomas totalmente condensados y alineados."},
+{q:"¿Dónde están los anillos de Balbiani?",opts:["Heterosoma","Autosoma","Cromosoma politénico","Ninguna"],correct:2,model:"profase",exp:"Se observan en cromosomas politénicos de glándulas salivales de dípteros."},
+{q:"¿Qué estructuras desaparecen SIEMPRE durante mitosis/meiosis?",opts:["Membrana plasmática","Plástidos","Nucléolo y membrana nuclear","Ninguno"],correct:2,model:"profase",exp:"Desaparecen nucléolo y envoltura nuclear en profase."},
+{q:"¿Cuál punto de control se considera restricción?",opts:["Punto M","G1","G2","Ninguno"],correct:1,model:"interfase",exp:"G1: decide si entra en S o reposo (G0)."},
+{q:"¿En qué etapa se separan las cromátidas hermanas?",opts:["Metafase","Telofase","Anafase","Ninguna"],correct:2,model:"anafase",exp:"Anafase: rompen cohesinas y migran a polos opuestos."},
+{q:"¿Dónde están los anillos de Balbiani? (repetido)",opts:["Heterosoma","Autosoma","Cromosoma politénico","Ninguna"],correct:2,model:"profase",exp:"Repite concepto: politénicos."},
+{q:"Separación de cromátidas (repetido)",opts:["Metafase","Telofase","Anafase","Ninguna"],correct:2,model:"anafase",exp:"Repite: anafase."},
+{q:"¿Cuándo se hacen visibles los cromosomas al microscopio óptico?",opts:["Telofase","Anafase","Profase","Prometafase"],correct:2,model:"profase",exp:"Profase: cromatina condensada → cromosomas visibles."}
+];
+
+/* ---------- VARIABLES ---------- */
+let current=0,score=0,answers=[],studentName='',userCountry='';
+
+/* ---------- INICIO ---------- */
+async function startExam(){
+studentName=document.getElementById('userName').value.trim();
+if(!studentName){alert('Escribe tu nombre');return;}
+document.getElementById('studentName').textContent=studentName;
+document.getElementById('nameBox').style.display='none';
+document.getElementById('examMain').style.display='block';
+document.getElementById('timerBox').style.display='block';
+// detectar país
+try{const r=await fetch('https://ipapi.co/json/');const d=await r.json();userCountry=d.country_name||'—';}catch{userCountry='—';}
+document.getElementById('userCountry').textContent=userCountry;
+await updateGlobalCounter(); // leer contador global
+startTimer();
+renderQuestion();
+render3D(questions[0].model);
+}
+
+/* ---------- CONTADOR GLOBAL ---------- */
+async function updateGlobalCounter(){
+try{
+const r=await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${FILE}`);
+if(!r.ok)throw'no file';
+const d=await r.json();
+document.getElementById('finishCount').textContent=d.totalFinished||0;
+}catch{document.getElementById('finishCount').textContent=0;}
+}
+async function incrementGlobalCounter(){
+try{
+// leer sha y contenido
+const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`);
+let sha='',data={totalFinished:0,countries:{}};
+if(r.ok){
+const j=await r.json();sha=j.sha;data=JSON.parse(atob(j.content));
+}
+data.totalFinished=(data.totalFinished||0)+1;
+data.countries=data.countries||{};
+data.countries[userCountry]=(data.countries[userCountry]||0)+1;
+const content=btoa(JSON.stringify(data,null,2));
+// commit
+await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`,{
+method:'PUT',
+headers:{'Authorization':`token ${TOKEN}`,'Content-Type':'application/json'},
+body:JSON.stringify({message:`nuevo finish ${studentName}`,content,sha})
+});
+document.getElementById('finishCount').textContent=data.totalFinished;
+}catch(e){console.error(e)}
+}
+
+/* ---------- RENDER ---------- */
+function renderQuestion(){
+const q=questions[current];
+document.getElementById('questionNumber').textContent=`Pregunta ${current+1} de ${questions.length}`;
+document.getElementById('questionText').textContent=q.q;
+const optsBox=document.getElementById('optionsContainer');
+optsBox.innerHTML='';
+document.getElementById('feedbackMsg').style.display='none';
+document.getElementById('explanationBox').style.display='none';
+q.opts.forEach((opt,i)=>{
+const btn=document.createElement('div');btn.className='option';btn.textContent=opt;
+btn.onclick=()=>selectAnswer(i);optsBox.appendChild(btn);
+});
+updateProgress();render3D(q.model);
+document.getElementById('prevBtn').disabled=current===0;
+document.getElementById('nextBtn').disabled=true;
+}
+function selectAnswer(idx){
+const q=questions[current];
+const opts=document.querySelectorAll('.option');opts.forEach(o=>o.onclick=null);
+answers[current]=idx;
+let ok=false;
+if(idx===q.correct){opts[idx].classList.add('correct');score++;ok=true;}
+else{opts[idx].classList.add('incorrect');opts[q.correct].classList.add('correct');}
+const fb=document.getElementById('feedbackMsg');fb.textContent=ok?'✅ Correcto':'❌ Incorrecto';fb.className=ok?'feedback-msg ok':'feedback-msg bad';fb.style.display='block';
+const exp=document.getElementById('explanationBox');exp.textContent='💡 '+q.exp;exp.style.display='block';
+document.getElementById('nextBtn').disabled=false;
+}
+function nextQuestion(){
+if(current<questions.length-1){current++;renderQuestion();}else{showResults();}
+}
+function previousQuestion(){if(current>0){current--;renderQuestion();}}
+function updateProgress(){document.getElementById('progressBar').style.width=`${((current+1)/questions.length)*100}%`;}
+
+/* ---------- RESULTADOS ---------- */
+async function showResults(){
+const time=stopTimer();
+await incrementGlobalCounter(); // ¡sumamos!
+document.getElementById('questionBox').style.display='none';document.querySelector('.controls').style.display='none';document.getElementById('model3d').style.display='none';
+const pct=Math.round((score/questions.length)*100);
+const circle=document.getElementById('scoreCircle');circle.style.setProperty('--p',pct);circle.textContent=pct+'%';
+let msg='';if(pct===100)msg='🏆 ¡Perfecto!';else if(pct>=70)msg='👏 Muy bien';else if(pct>=50)msg='👍 Bien';else msg='📖 Sigue estudiando';
+document.getElementById('resultMessage').textContent=msg;document.getElementById('timeUsed').textContent=`⏱️ Tiempo: ${time} | 🌍 País: ${userCountry}`;
+document.getElementById('resultBox').style.display='block';
+}
+
+/* ---------- CERTIFICADO ---------- */
+function downloadCertificate(){
+const cert=document.createElement('div');cert.style.background='#fff';cert.style.padding='30px';cert.style.textAlign='center';cert.style.fontFamily='Segoe UI';cert.style.border='5px solid var(--prim)';cert.style.borderRadius='15px';cert.style.width='90%';cert.style.maxWidth='600px';cert.style.margin='0 auto';
+cert.innerHTML=`<h2 style="color:var(--prim)">🧬 Certificado Mitosis 9no</h2>
+<p style="font-size:1.3em;margin:10px">Se otorga a:</p>
+<h3 style="color:var(--sec)">${studentName}</h3>
+<p style="font-size:1.1em">Puntuación: <b>${score}/9 (${Math.round(score/9*100)}%)</b></p>
+<p style="font-size:1em">Tiempo: ${document.getElementById('timeUsed').textContent}</p>
+<p style="font-size:.9em;color:#777">Fecha: ${new Date().toLocaleDateString('es-ES')}</p>`;
+document.body.appendChild(cert);
+html2canvas(cert).then(canvas=>{
+const a=document.createElement('a');a.download=`Certificado_${studentName.replace(/\s+/g,'_')}.png`;a.href=canvas.toDataURL();a.click();document.body.removeChild(cert);
+});
+}
+
+/* ---------- 3D ---------- */
+function render3D(type){const c=document.getElementById('model3d');c.innerHTML='';
+function metafase(){const cell=document.createElement('div');cell.className='cell';
+for(let i=0;i<6;i++){const ch=document.createElement('div');ch.className='chromosome';const ang=(i*60)-30;const x=Math.cos(ang*Math.PI/180)*70;ch.style.left=`calc(50% + ${x}px)`;ch.style.top='50%';ch.style.transform=`translate(-50%,-50%) rotate(${ang}deg)`;const ce=document.createElement('div');ce.className='centromere';ch.appendChild(ce);cell.appendChild(ch);}
+for(let i=0;i<4;i++){const sp=document.createElement('div');sp.className='spindle-fiber';sp.style.transform=`translateX(-50%) rotate(${i*45}deg)`;cell.appendChild(sp);}c.appendChild(cell);}
+function profase(){const cell=document.createElement('div');cell.className='cell';
+for(let i=0;i<6;i++){const ch=document.createElement('div');ch.className='chromosome';const x=(Math.random()-.5)*110;const y=(Math.random()-.5)*110;ch.style.left=`calc(50% + ${x}px)`;ch.style.top=`calc(50% + ${y}px)`;ch.style.transform=`translate(-50%,-50%) rotate(${Math.random()*360}deg)`;ch.style.animation='pulse 1.5s infinite';const ce=document.createElement('div');ce.className='centromere';ch.appendChild(ce);cell.appendChild(ch);}c.appendChild(cell);}
+function anafase(){const cell=document.createElement('div');cell.className='cell';
+for(let i=0;i<6;i++){const c1=document.createElement('div');c1.className='chromosome';c1.style.width='35px';c1.style.left=`calc(30% + ${i*8}px)`;c1.style.top='50%';c1.style.animation='none';const c2=document.createElement('div');c2.className='chromosome';c2.style.width='35px';c2.style.left=`calc(70% + ${i*8}px)`;c2.style.top='50%';c2.style.animation='none';cell.appendChild(c1);cell.appendChild(c2);}
+for(let i=0;i<8;i++){const sp=document.createElement('div');sp.className='spindle-fiber';sp.style.left=i<4?'30%':'70%';sp.style.transform=`translateX(-50%) rotate(${(i%4)*25}deg)`;cell.appendChild(sp);}c.appendChild(cell);}
+function interfase(){const cell=document.createElement('div');cell.className='cell';const nuc=document.createElement('div');nuc.style.position='absolute';nuc.style.width='70px';nuc.style.height='70px';nuc.style.border='3px solid #9C27B0';nuc.style.borderRadius='50%';nuc.style.left='50%';nuc.style.top='50%';nuc.style.transform='translate(-50%,-50%)';nuc.style.background='radial-gradient(circle,rgba(156,39,176,.2),transparent)';cell.appendChild(nuc);c.appendChild(cell);}
+switch(type){case'profase':profase();break;case'anafase':anafase();break;case'interfase':interfase();break;default:metafase();break;}
+}
+</script>
+</body>
+</html>
