@@ -1,0 +1,31 @@
+name: recordVisit
+
+on:
+  repository_dispatch:
+    types: [newVisit]
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Crear archivo si no existe
+        run: |
+          [ ! -f globalCounters.json ] && echo '{"visits":[],"totalVisits":0}' > globalCounters.json
+      - name: Añadir visita
+        run: |
+          sudo apt-get install -y jq
+          NAME='${{ github.event.client_payload.name }}'
+          COUNTRY='${{ github.event.client_payload.country }}'
+          DATE='${{ github.event.client_payload.date }}'
+          # leer
+          jq --arg name "$NAME" --arg country "$COUNTRY" --arg date "$DATE" \
+             '.visits += [{name:$name,country:$country,date:$date}] | .totalVisits += 1' \
+             globalCounters.json > tmp && mv tmp globalCounters.json
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add globalCounters.json
+          git commit -m "nueva visita ${{ github.event.client_payload.name }}"
+          git push
