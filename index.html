@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Examen Mitosis – Contador de Visitas</title>
+<title>Examen Mitosis 9no – Contador de Visitas</title>
 <style>
 :root{--prim:#667eea;--sec:#764ba2;--ok:#4CAF50;--bad:#f44336}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -164,23 +164,11 @@ renderQuestion();
 render3D(questions[0].model);
 setInterval(updateVisitsBoard,5000); // actualiza cada 5 s
 }
-/* ---------- GRABAR VISITA (sin token) ---------- */
-async function recordVisit(){
-const today=new Date().toISOString().slice(0,10);
-await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/dispatches`,{
-method:'POST',
-headers:{'Content-Type':'application/json','Authorization':`token ${TOKEN}`}, // ← este TOKEN es el **que ya tiene GitHub** dentro del workflow; no lo pones tú.
-body:JSON.stringify({
-  event_type:'newVisit',
-  client_payload:{name:studentName,country:userCountry,date:today}
-})
-}).catch(()=>{}); // si falla, continuamos
-}
 
-/* ---------- GRABAR VISITA (anónimo, sin token) ---------- */
+/* ---------- GRABAR VISITA (anónimo) ---------- */
 async function recordVisit(){
 const today=new Date().toISOString().slice(0,10);
-// en repos públicos GitHub acepta dispatch sin auth
+// disparar evento al workflow (repos públicos lo aceptan sin auth)
 await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/dispatches`,{
 method:'POST',
 headers:{'Content-Type':'application/json'},
@@ -190,6 +178,21 @@ body:JSON.stringify({
 })
 }).catch(()=>{}); // ignoramos error
 }
+
+/* ---------- LEER Y MOSTRAR VISITAS ---------- */
+async function updateVisitsBoard(){
+try{
+const r=await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${FILE}`);
+if(!r.ok)throw'no file';
+const d=await r.json();
+const today=new Date().toISOString().slice(0,10);
+const todayVisits=(d.visits||[]).filter(v=>v.date===today);
+document.getElementById('totalVisits').textContent=d.totalVisits||0;
+const list=document.getElementById('visitsList');list.innerHTML='';
+todayVisits.slice(-20).reverse().forEach(v=>{
+const li=document.createElement('li');li.textContent=`${v.name} (${v.country})`;list.appendChild(li);
+});
+}catch{document.getElementById('totalVisits').textContent=0;}
 }
 
 /* ---------- RENDER ---------- */
