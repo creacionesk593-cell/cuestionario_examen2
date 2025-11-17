@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Examen Mitosis 9no – Tiempo Real</title>
+<title>Examen Mitosis – Contador de Visitas</title>
 <style>
 :root{--prim:#667eea;--sec:#764ba2;--ok:#4CAF50;--bad:#f44336}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -17,12 +17,12 @@ h1{font-size:2em;color:var(--prim);margin-bottom:8px}
 .name-input-box input{padding:10px 15px;border:2px solid #ddd;border-radius:25px;font-size:1em;width:260px;max-width:80%;transition:border .3s}
 .name-input-box input:focus{outline:none;border-color:var(--prim)}
 .visitors-box{font-size:1em;color:#444}
-/* TABLÓN EN VIVO */
-.live-board{background:#e8f5e9;border:2px solid var(--ok);border-radius:10px;padding:12px;margin-bottom:15px;font-size:.95em;max-height:150px;overflow-y:auto}
-.live-board h3{margin:0 0 8px;font-size:1.1em;color:var(--ok)}
-.live-board ul{list-style:none;padding:0;margin:0}
-.live-board li{padding:3px 0;border-bottom:1px dashed #c8e6c9}
-.live-board .total{font-weight:700;margin-top:8px}
+/* TABLÓN DE VISITAS */
+.visits-board{background:#e3f2fd;border:2px solid #2196F3;border-radius:10px;padding:12px;margin-bottom:15px;font-size:.95em;max-height:180px;overflow-y:auto}
+.visits-board h3{margin:0 0 8px;font-size:1.1em;color:#2196F3}
+.visits-board ul{list-style:none;padding:0;margin:0}
+.visits-board li{padding:3px 0;border-bottom:1px dashed #bbdefb}
+.visits-board .total{font-weight:700;margin-top:8px}
 .progress-bar{height:8px;background:#e0e0e0;border-radius:4px;margin:15px 0;overflow:hidden}
 .progress{height:100%;background:linear-gradient(90deg,var(--ok),#8BC34A);width:0;transition:width .4s}
 .question-box{margin-bottom:20px}
@@ -61,7 +61,7 @@ h1{font-size:2em;color:var(--prim);margin-bottom:8px}
 <div class="container">
 <header>
 <h1>🧬 Examen Mitosis 9no</h1>
-<p class="subtitle">Cuestionario interactivo con contador global</p>
+<p class="subtitle">Contador de visitas en tiempo real</p>
 <div class="timer-box" id="timerBox" style="display:none">Tiempo: 00:00</div>
 <div class="name-input-box" id="nameBox">
 <label for="userName">Escribe tu nombre para comenzar:</label><br>
@@ -69,11 +69,11 @@ h1{font-size:2em;color:var(--prim);margin-bottom:8px}
 <button class="btn" onclick="startExam()">Comenzar</button>
 </div>
 
-<!-- PANEL EN VIVO -->
-<div class="live-board" id="liveBoard" style="display:none">
-<h3>🏆 Tablón en vivo</h3>
-<ul id="liveList"></ul>
-<div class="total">Total terminados: <b id="finishCount">0</b></div>
+<!-- PANEL DE VISITAS -->
+<div class="visits-board" id="visitsBoard" style="display:none">
+<h3>👥 Visitas hoy</h3>
+<ul id="visitsList"></ul>
+<div class="total">Total visitas: <b id="totalVisits">0</b></div>
 </div>
 
 <div class="visitors-box" id="visitorsBox" style="display:none">
@@ -151,55 +151,53 @@ studentName=document.getElementById('userName').value.trim();
 if(!studentName){alert('Escribe tu nombre');return;}
 document.getElementById('studentName').textContent=studentName;
 document.getElementById('nameBox').style.display='none';
-document.getElementById('liveBoard').style.display='block';
+document.getElementById('visitsBoard').style.display='block';
 document.getElementById('examMain').style.display='block';
 document.getElementById('timerBox').style.display='block';
 // detectar país
 try{const r=await fetch('https://ipapi.co/json/');const d=await r.json();userCountry=d.country_name||'—';}catch{userCountry='—';}
 document.getElementById('userCountry').textContent=userCountry;
-await updateGlobalCounter(); // primera carga
+await recordVisit(); // ⬅️ guardar visita
+await updateVisitsBoard(); // mostrar
 startTimer();
 renderQuestion();
 render3D(questions[0].model);
-setInterval(updateGlobalCounter,5000); // actualiza cada 5 s
+setInterval(updateVisitsBoard,5000); // actualiza cada 5 s
 }
 
-/* ---------- CONTADOR GLOBAL + LISTA EN VIVO ---------- */
-async function updateGlobalCounter(){
-try{
-const r=await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${FILE}`);
-if(!r.ok)throw'no file';
-const d=await r.json();
-document.getElementById('finishCount').textContent=d.totalFinished||0;
-// listado de últimos 10
-const list=document.getElementById('liveList');list.innerHTML='';
-const arr=(d.lastTen||[]).slice(-10);
-arr.reverse().forEach(item=>{
-const li=document.createElement('li');li.textContent=`${item.name} (${item.country}) – ${item.score}/9`;list.appendChild(li);
-});
-}catch{document.getElementById('finishCount').textContent=0;}
-}
-
-/* ---------- INCREMENTAR ---------- */
-async function incrementGlobalCounter(){
+/* ---------- GRABAR VISITA ---------- */
+async function recordVisit(){
 try{
 const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`);
-let sha='',data={totalFinished:0,countries:{},lastTen:[]};
+let sha='',data={visits:[],totalVisits:0};
 if(r.ok){const j=await r.json();sha=j.sha;data=JSON.parse(atob(j.content));}
-data.totalFinished=(data.totalFinished||0)+1;
-data.countries=data.countries||{};
-data.countries[userCountry]=(data.countries[userCountry]||0)+1;
-data.lastTen=data.lastTen||[];
-data.lastTen.push({name:studentName,country:userCountry,score:score,date:new Date().toISOString()});
-if(data.lastTen.length>10)data.lastTen=data.lastTen.slice(-10);
+const today=new Date().toISOString().slice(0,10);
+data.visits=data.visits||[];
+data.visits.push({name:studentName,country:userCountry,date:today});
+data.totalVisits=(data.totalVisits||0)+1;
 const content=btoa(JSON.stringify(data,null,2));
 await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`,{
 method:'PUT',
 headers:{'Authorization':`token ${TOKEN}`,'Content-Type':'application/json'},
-body:JSON.stringify({message:`finish ${studentName}`,content,sha})
+body:JSON.stringify({message:`visita ${studentName}`,content,sha})
 });
-document.getElementById('finishCount').textContent=data.totalFinished;
 }catch(e){console.error(e)}
+}
+
+/* ---------- LEER Y MOSTRAR VISITAS ---------- */
+async function updateVisitsBoard(){
+try{
+const r=await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${FILE}`);
+if(!r.ok)throw'no file';
+const d=await r.json();
+const today=new Date().toISOString().slice(0,10);
+const todayVisits=(d.visits||[]).filter(v=>v.date===today);
+document.getElementById('totalVisits').textContent=d.totalVisits||0;
+const list=document.getElementById('visitsList');list.innerHTML='';
+todayVisits.slice(-20).reverse().forEach(v=>{
+const li=document.createElement('li');li.textContent=`${v.name} (${v.country})`;list.appendChild(li);
+});
+}catch{document.getElementById('totalVisits').textContent=0;}
 }
 
 /* ---------- RENDER ---------- */
@@ -239,7 +237,6 @@ function updateProgress(){document.getElementById('progressBar').style.width=`${
 /* ---------- RESULTADOS ---------- */
 async function showResults(){
 const time=stopTimer();
-await incrementGlobalCounter(); // ¡sumamos!
 document.getElementById('questionBox').style.display='none';document.querySelector('.controls').style.display='none';document.getElementById('model3d').style.display='none';
 const pct=Math.round((score/questions.length)*100);
 const circle=document.getElementById('scoreCircle');circle.style.setProperty('--p',pct);circle.textContent=pct+'%';
@@ -248,9 +245,8 @@ document.getElementById('resultMessage').textContent=msg;document.getElementById
 document.getElementById('resultBox').style.display='block';
 }
 
-/* ---------- CERTIFICADO 2× MÁS GRANDE ---------- */
+/* ---------- CERTIFICADO ---------- */
 function downloadCertificate(){
-// canvas doble tamaño
 const cert=document.createElement('div');cert.style.background='#fff';cert.style.padding='60px';cert.style.textAlign='center';cert.style.fontFamily='Segoe UI';cert.style.border='8px solid var(--prim)';cert.style.borderRadius='25px';cert.style.width='90%';cert.style.maxWidth='1000px';cert.style.margin='0 auto';cert.style.fontSize='1.4em';
 cert.innerHTML=`<h1 style="color:var(--prim);font-size:3em;margin-bottom:20px">🧬 Certificado Mitosis 9no</h1>
 <p style="font-size:1.6em;margin:15px">Se otorga a:</p>
@@ -259,7 +255,6 @@ cert.innerHTML=`<h1 style="color:var(--prim);font-size:3em;margin-bottom:20px">�
 <p style="font-size:1.2em">Tiempo: ${document.getElementById('timeUsed').textContent}</p>
 <p style="font-size:1em;color:#777;margin-top:25px">Fecha: ${new Date().toLocaleDateString('es-ES')}</p>`;
 document.body.appendChild(cert);
-// generar canvas al doble de escala
 html2canvas(cert,{scale:2}).then(canvas=>{
 const a=document.createElement('a');a.download=`Certificado_${studentName.replace(/\s+/g,'_')}.png`;a.href=canvas.toDataURL();a.click();document.body.removeChild(cert);
 });
