@@ -164,40 +164,32 @@ renderQuestion();
 render3D(questions[0].model);
 setInterval(updateVisitsBoard,5000); // actualiza cada 5 s
 }
-
-/* ---------- GRABAR VISITA ---------- */
+/* ---------- GRABAR VISITA (sin token) ---------- */
 async function recordVisit(){
-try{
-const r=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`);
-let sha='',data={visits:[],totalVisits:0};
-if(r.ok){const j=await r.json();sha=j.sha;data=JSON.parse(atob(j.content));}
 const today=new Date().toISOString().slice(0,10);
-data.visits=data.visits||[];
-data.visits.push({name:studentName,country:userCountry,date:today});
-data.totalVisits=(data.totalVisits||0)+1;
-const content=btoa(JSON.stringify(data,null,2));
-await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`,{
-method:'PUT',
-headers:{'Authorization':`token ${TOKEN}`,'Content-Type':'application/json'},
-body:JSON.stringify({message:`visita ${studentName}`,content,sha})
-});
-}catch(e){console.error(e)}
+await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/dispatches`,{
+method:'POST',
+headers:{'Content-Type':'application/json','Authorization':`token ${TOKEN}`}, // ← este TOKEN es el **que ya tiene GitHub** dentro del workflow; no lo pones tú.
+body:JSON.stringify({
+  event_type:'newVisit',
+  client_payload:{name:studentName,country:userCountry,date:today}
+})
+}).catch(()=>{}); // si falla, continuamos
 }
 
-/* ---------- LEER Y MOSTRAR VISITAS ---------- */
-async function updateVisitsBoard(){
-try{
-const r=await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${FILE}`);
-if(!r.ok)throw'no file';
-const d=await r.json();
+/* ---------- GRABAR VISITA (anónimo, sin token) ---------- */
+async function recordVisit(){
 const today=new Date().toISOString().slice(0,10);
-const todayVisits=(d.visits||[]).filter(v=>v.date===today);
-document.getElementById('totalVisits').textContent=d.totalVisits||0;
-const list=document.getElementById('visitsList');list.innerHTML='';
-todayVisits.slice(-20).reverse().forEach(v=>{
-const li=document.createElement('li');li.textContent=`${v.name} (${v.country})`;list.appendChild(li);
-});
-}catch{document.getElementById('totalVisits').textContent=0;}
+// en repos públicos GitHub acepta dispatch sin auth
+await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/dispatches`,{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({
+  event_type:'newVisit',
+  client_payload:{name:studentName,country:userCountry,date:today}
+})
+}).catch(()=>{}); // ignoramos error
+}
 }
 
 /* ---------- RENDER ---------- */
